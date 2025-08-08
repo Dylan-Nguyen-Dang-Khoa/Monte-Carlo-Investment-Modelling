@@ -6,7 +6,26 @@ import streamlit as st
 
 
 class Stock():
-    def __init__(self, ticker="GC=F", start_date=pd.to_datetime("today").date() - pd.Timedelta(days=1), end_date=pd.to_datetime("today").date()):
-        print(start_date, end_date)
-        self.data = yf.download(ticker, start_date, end_date)
+    def __init__(self, ticker="GC=F", period="max"):
+        self.data = yf.download(tickers=ticker, period=period, auto_adjust=True)
+    
+    def average_log_returns_and_volatility(self):
+        log_returns = []
+        previous_close = None
+        for index, row in self.data.iterrows():
+            if previous_close is not None: 
+                log_returns.append(np.log(row["Close"] / previous_close))
+            previous_close = row["Close"]
+        average_log_returns = np.mean(log_returns)
+        volatility = np.std(log_returns, ddof=1)
+        return average_log_returns, volatility
+
+            
+
+
+gold = Stock()
+print(gold.average_log_returns_and_volatility())
+
+
+
     
