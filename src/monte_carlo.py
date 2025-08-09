@@ -31,7 +31,7 @@ class MonteCarlo:
         self.sigma = np.std(log_returns, ddof=1)
 
     def geometric_brownian_motion(self, num_simulations=100) -> None:
-        self.num_simulations = num_simulations
+        self.num_simulations = st.number_input("Please input the number of paths you want:", min_value=0)
         self.simulated_prices = np.full(shape=(num_simulations, 1), fill_value=self.S0)
         for step in range(self.N):
             step_prices = self.simulated_prices[:, step] * np.exp(
@@ -48,9 +48,9 @@ def is_valid_ticker(ticker):
 
 
 def show_plot(simulation_object):
-    num_paths = st.number_input("Please input the number of paths you want:", min_value=0)
+    
     t = np.linspace(0, simulation_object.T, simulation_object.simulated_prices.shape[1])
-    for i in range(num_paths):
+    for i in range(simulation_object.num_simulations):
         plt.plot(t, simulation_object.simulated_prices[i, :], alpha=0.2)
     plt.xlabel("Time (years)")
     plt.ylabel("Price")
