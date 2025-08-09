@@ -30,8 +30,8 @@ class MonteCarlo:
         self.drift = np.mean(log_returns)
         self.sigma = np.std(log_returns, ddof=1)
 
-    def geometric_brownian_motion(self, num_simulations=100) -> None:
-        self.num_simulations = st.number_input("Please input the number of paths you want:", min_value=0)
+    def geometric_brownian_motion(self, num_simulations) -> None:
+        self.num_simulations = num_simulations
         self.simulated_prices = np.full(shape=(num_simulations, 1), fill_value=self.S0)
         for step in range(self.N):
             step_prices = self.simulated_prices[:, step] * np.exp(
@@ -48,7 +48,6 @@ def is_valid_ticker(ticker):
 
 
 def show_plot(simulation_object):
-    
     t = np.linspace(0, simulation_object.T, simulation_object.simulated_prices.shape[1])
     for i in range(simulation_object.num_simulations):
         plt.plot(t, simulation_object.simulated_prices[i, :], alpha=0.2)
@@ -67,7 +66,6 @@ def main() -> None:
             financial_data_period = st.radio(
                 "Select historical data to use:",
                 (
-                    "1d",
                     "5d",
                     "1mo",
                     "3mo",
@@ -84,7 +82,7 @@ def main() -> None:
             T = st.number_input("Enter number of years to simulate:", min_value=1)
             time_unit = st.radio(
                 "Select time unit for intervals:",
-                ("Seconds", "Minutes", "Hours", "Days"),
+                ("Hours", "Days"),
             )
             amount = st.number_input(
                 f"Enter amount of {time_unit.lower()} for intervals:", min_value=1
@@ -96,8 +94,6 @@ def main() -> None:
             else:
                 st.write(f"You selected {amount} {time_unit.lower()}.")
             fractions_of_year_multipliers = {
-                "Seconds": 1 / (252 * 6.5 * 3600),
-                "Minutes": 1 / (252 * 6.5 * 60),
                 "Hours": 1 / (252 * 6.5),
                 "Days": 1 / 252,
             }
@@ -107,7 +103,10 @@ def main() -> None:
                 S0=stock.data["Close"].iloc[-1],
                 log_returns=stock.log_returns,
             )
-            simulation.geometric_brownian_motion()
+            num_simulations = st.number_input(
+                "Please input the number of paths you want:", min_value=0
+            )
+            simulation.geometric_brownian_motion(num_simulations=num_simulations)
             show_plot(simulation)
         else:
             st.error("Please input a valid ticker value")
