@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from numpy.typing import NDArray
 import yfinance as yf
 import matplotlib.pyplot as plt
 import streamlit as st
@@ -27,10 +28,11 @@ class MonteCarlo:
         self.dT = dT
         self.N = int(self.T / self.dT)
         self.S0 = S0
+        self.v_t = np.square(log_returns)
         self.drift = np.mean(log_returns)
         self.sigma = np.std(log_returns, ddof=1)
 
-    def geometric_brownian_motion(self, num_simulations) -> None:
+    def geometric_brownian_motion(self, num_simulations: int) -> None:
         self.num_simulations = num_simulations
         self.simulated_prices = np.full(shape=(num_simulations, 1), fill_value=self.S0)
         for step in range(self.N):
@@ -40,6 +42,27 @@ class MonteCarlo:
             )
             step_prices = step_prices.reshape(-1, 1)
             self.simulated_prices = np.hstack((self.simulated_prices, step_prices))
+
+    def heston_model(self):
+        X = self.v_t[:-1]
+        Y = self.v_t[1:]
+
+    def linear_regression(
+        self, X: NDArray[np.float64], Y: NDArray[np.float64]
+    ) -> tuple[float, float]:
+        mean_X = np.mean(X)
+        mean_Y = np.mean(Y)
+        X_deviations = X - mean_X
+        Y_deviations = Y - mean_Y
+        assert len(X_deviations) == len(Y_deviations)
+        variance_x = np.var(X, ddof=1)
+        cov_xy = 0
+        for X_deviation, Y_deviation in zip(X_deviations, Y_deviations):
+            cov_xy += X_deviation * Y_deviation
+        cov_xy /= len(X_deviations) - 1
+        a = cov_xy / variance_x
+        b = mean_Y - a * mean_X
+        return float(a), float(b)
 
 
 def is_valid_ticker(ticker):
