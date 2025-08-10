@@ -56,10 +56,10 @@ class MonteCarlo:
         Y_deviations = Y - mean_Y
         assert len(X_deviations) == len(Y_deviations)
         variance_x = np.var(X, ddof=1)
-        cov_xy = 0
+        cov_xy = 0.0
         for X_deviation, Y_deviation in zip(X_deviations, Y_deviations):
             cov_xy += X_deviation * Y_deviation
-        cov_xy /= len(X_deviations) - 1
+        cov_xy /= (len(X_deviations) - 1)
         a = cov_xy / variance_x
         b = mean_Y - a * mean_X
         return float(a), float(b)
@@ -122,7 +122,7 @@ def main() -> None:
             }
             simulation = MonteCarlo(
                 T=T,
-                dT=amount * fractions_of_year_multipliers.get(time_unit),
+                dT=amount * fractions_of_year_multipliers.get(time_unit, 1),
                 S0=stock.data["Close"].iloc[-1],
                 log_returns=stock.log_returns,
             )
