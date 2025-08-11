@@ -52,15 +52,10 @@ class MonteCarlo:
     ) -> tuple[float, float]:
         mean_X = np.mean(X)
         mean_Y = np.mean(Y)
-        X_deviations = X - mean_X
-        Y_deviations = Y - mean_Y
-        assert len(X_deviations) == len(Y_deviations)
-        variance_x = np.var(X, ddof=1)
-        cov_xy = 0.0
-        for X_deviation, Y_deviation in zip(X_deviations, Y_deviations):
-            cov_xy += X_deviation * Y_deviation
-        cov_xy /= (len(X_deviations) - 1)
-        a = cov_xy / variance_x
+        cov_matrix = np.cov(X, Y, ddof=1)
+        var_x = cov_matrix[0, 0]
+        cov_xy = cov_matrix[0, 1]
+        a = cov_xy / var_x
         b = mean_Y - a * mean_X
         return float(a), float(b)
 
