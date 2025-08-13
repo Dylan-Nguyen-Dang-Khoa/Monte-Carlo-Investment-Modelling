@@ -21,25 +21,20 @@ class Stock:
 
 
 class MonteCarlo:
-    def __init__(
-        self, T: int, dT: float, S0: float, log_returns: list  # T is in years
-    ) -> None:
-        self.T = T
-        self.dT = dT
-        self.N = int(self.T / self.dT)
+    def __init__(self, S0: float, log_returns: list, T: int) -> None:  # T is in years
+        self.dT = 1 / 252
+        self.N = T // self.dT
         self.S0 = S0
         self.v_t = np.square(log_returns)
-        self.drift = np.mean(log_returns)
-        self.sigma = np.std(log_returns, ddof=1)
+        self.drift = np.mean(log_returns) - np.var(log_returns) / 2
+        self.sigma = np.std(log_returns)
 
     def geometric_brownian_motion(self, num_simulations: int) -> None:
         self.num_simulations = num_simulations
         self.simulated_prices = np.full(shape=(num_simulations, 1), fill_value=self.S0)
         for step in range(self.N):
-            step_prices = self.simulated_prices[:, step] * np.exp(
-                (self.drift - self.sigma**2 / 2) * self.dT
-                + self.sigma * self.dT**0.5 * np.random.normal(size=(num_simulations,))
-            )
+            W = self.sigma * np.random.normal(size=self.simulated_prices[:, step].shape)
+            step_prices = self.simulated_prices[:, step] * np.exp(self.drift * W)
             step_prices = step_prices.reshape(-1, 1)
             self.simulated_prices = np.hstack((self.simulated_prices, step_prices))
 
@@ -65,16 +60,6 @@ def is_valid_ticker(ticker):
     return not data.empty
 
 
-def show_plot(simulation_object):
-    t = np.linspace(0, simulation_object.T, simulation_object.simulated_prices.shape[1])
-    for i in range(simulation_object.num_simulations):
-        plt.plot(t, simulation_object.simulated_prices[i, :], alpha=0.2)
-    plt.xlabel("Time (years)")
-    plt.ylabel("Price")
-    plt.title("Monte Carlo Simulated Paths")
-    st.pyplot(plt)
-
-
 def main() -> None:
     st.title("Ticker Input")
     ticker = st.text_input("Enter a stock ticker symbol")
@@ -97,35 +82,17 @@ def main() -> None:
                 ),
             )
             stock = Stock(ticker=ticker, period=financial_data_period)
-            T = st.number_input("Enter number of years to simulate:", min_value=1)
-            time_unit = st.radio(
-                "Select time unit for intervals:",
-                ("Hours", "Days"),
-            )
-            amount = st.number_input(
-                f"Enter amount of {time_unit.lower()} for intervals:", min_value=1
-            )
-            if amount == 1:
-                st.write(
-                    f"You selected {amount} {time_unit.lower().removesuffix("s")}."
-                )
-            else:
-                st.write(f"You selected {amount} {time_unit.lower()}.")
-            fractions_of_year_multipliers = {
-                "Hours": 1 / (252 * 6.5),
-                "Days": 1 / 252,
-            }
+            days = st.number_input("Enter number of days to simulate:", min_value=1)
+            T = days / 252
             simulation = MonteCarlo(
                 T=T,
-                dT=amount * fractions_of_year_multipliers.get(time_unit, 1),
                 S0=stock.data["Close"].iloc[-1],
                 log_returns=stock.log_returns,
             )
             num_simulations = st.number_input(
-                "Please input the number of paths you want:", min_value=0
+                "Please input the number of paths you want:", min_value=1
             )
             simulation.geometric_brownian_motion(num_simulations=num_simulations)
-            show_plot(simulation)
         else:
             st.error("Please input a valid ticker value")
 
