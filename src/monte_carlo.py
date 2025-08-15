@@ -38,9 +38,12 @@ class MonteCarlo:
             step_prices = step_prices.reshape(-1, 1)
             self.simulated_prices = np.hstack((self.simulated_prices, step_prices))
 
-    def heston_model(self):
+    def heston_model_init(self):
         X = self.v_t[:-1]
         Y = self.v_t[1:]
+        a, b = self.linear_regression(X=X, Y=Y)
+        self.theta = a / (1 - b)
+        self.kappa = -np.log(b) / self.dT
 
     def linear_regression(
         self, X: NDArray[np.float64], Y: NDArray[np.float64]
@@ -67,7 +70,7 @@ def main() -> None:
         if is_valid_ticker(ticker):
             st.success("Ticker is go!")
             financial_data_period = st.radio(
-                "Select historical data to use:",
+                "Select length of historical data to use:",
                 (
                     "5d",
                     "1mo",
@@ -82,8 +85,20 @@ def main() -> None:
                 ),
             )
             stock = Stock(ticker=ticker, period=financial_data_period)
-            days = st.number_input("Enter number of days to simulate:", min_value=1)
-            T = days / 252
+            simulation_units = st.radio(
+                "Select the unit for the length of the simulation:",
+                ("Days", "Months", "Years"),
+            )
+            if simulation_units == "Days":
+                days = st.number_input("Enter number of days to simulate:", min_value=1)
+                T = days / 252
+            elif simulation_units == "Months":
+                months = st.number_input(
+                    "Enter number of months to simulate:", min_value=1
+                )
+                T = months / 12
+            else:
+                T = st.number_input("Enter number of years to simulate:", min_value=1)
             simulation = MonteCarlo(
                 T=T,
                 S0=stock.data["Close"].iloc[-1],
