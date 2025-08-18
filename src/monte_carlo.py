@@ -23,11 +23,13 @@ class Stock:
 class MonteCarlo:
     def __init__(self, S0: float, log_returns: list, T: int) -> None:  # T is in years
         self.dT = 1 / 252
-        self.N = T // self.dT
+        self.N = int(T / self.dT)
         self.S0 = S0
-        self.v_t = np.square(log_returns)
-        self.drift = np.mean(log_returns) - np.var(log_returns) / 2
-        self.sigma = np.std(log_returns)
+        self.squared_log_returns = np.square(log_returns)
+        self.v_t = np.var(log_returns[-30:], ddof=1)
+        self.drift = (np.mean(log_returns) - np.var(log_returns, ddof=1) / 2) * 252
+        self.sigma = np.std(log_returns, ddof=1) * np.sqrt(252)
+        self.heston_model_init()
 
     def geometric_brownian_motion(self, num_simulations: int) -> None:
         self.num_simulations = num_simulations
@@ -38,12 +40,15 @@ class MonteCarlo:
             step_prices = step_prices.reshape(-1, 1)
             self.simulated_prices = np.hstack((self.simulated_prices, step_prices))
 
-    def heston_model_init(self):
-        X = self.v_t[:-1]
-        Y = self.v_t[1:]
+    def heston_model_init(self) -> None:
+        X = self.squared_log_returns[:-1]
+        Y = self.squared_log_returns[1:]
         a, b = self.linear_regression(X=X, Y=Y)
         self.theta = a / (1 - b)
         self.kappa = -np.log(b) / self.dT
+
+    def calculate_volatility(self) -> float:
+        self.v_t = self.v_t * self.kappa() * (self.theta - self.v_t) * self.dT
 
     def linear_regression(
         self, X: NDArray[np.float64], Y: NDArray[np.float64]
