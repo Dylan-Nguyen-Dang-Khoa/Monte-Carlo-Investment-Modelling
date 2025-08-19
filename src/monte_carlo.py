@@ -30,9 +30,11 @@ class MonteCarlo:
         self.drift = (np.mean(log_returns) - np.var(log_returns, ddof=1) / 2) * 252
         self.heston_model_init()
 
-    def heston_geometric_brownian_motion(self, num_simulations: int) -> None:
+    def heston_model(self, num_simulations: int) -> None:
         self.num_simulations = num_simulations
-        self.v_t = np.full(shape=(num_simulations,), fill_value=np.var(self.log_returns[-30:], ddof=1)) 
+        self.v_t = np.full(
+            shape=(num_simulations,), fill_value=np.var(self.log_returns[-30:], ddof=1)
+        )
         self.simulated_prices = np.full(shape=(num_simulations, 1), fill_value=self.S0)
         for step in range(self.N):
             Z = np.random.normal(size=self.simulated_prices[:, step].shape)
@@ -59,7 +61,7 @@ class MonteCarlo:
         self.kappa = -np.log(b) / self.dT
         self.xi = self.calculate_xi()
 
-    def calculate_volatility(self) -> float:
+    def calculate_volatility(self) -> None:
         Z = np.random.normal(size=self.num_simulations)
         self.v_t = (
             self.v_t
@@ -78,6 +80,9 @@ class MonteCarlo:
         a = cov_xy / var_x
         b = mean_Y - a * mean_X
         return float(a), float(b)
+
+    def plot_monte_carlo(self):
+        ...
 
 
 def is_valid_ticker(ticker):
@@ -129,7 +134,7 @@ def main() -> None:
             num_simulations = st.number_input(
                 "Please input the number of paths you want:", min_value=1
             )
-            simulation.geometric_brownian_motion(num_simulations=num_simulations)
+            simulation.heston_model(num_simulations=num_simulations)
         else:
             st.error("Please input a valid ticker value")
 
