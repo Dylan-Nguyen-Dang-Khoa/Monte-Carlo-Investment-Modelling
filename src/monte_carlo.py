@@ -27,7 +27,7 @@ class MonteCarlo:
         self.S0 = S0
         self.log_returns = log_returns
         self.squared_log_returns = np.square(log_returns)
-        self.drift = (np.mean(log_returns) - np.var(log_returns, ddof=1) / 2) * 252
+        self.drift = (np.mean(log_returns) - np.var(log_returns, ddof=1) / 2)
         self.heston_model_init()
 
     def heston_model(self, num_simulations: int) -> None:
@@ -56,17 +56,18 @@ class MonteCarlo:
     def heston_model_init(self) -> None:
         X = self.squared_log_returns[:-1]
         Y = self.squared_log_returns[1:]
-        a, b = self.linear_regression(X=X, Y=Y)
-        self.theta = a / (1 - b)
-        self.kappa = -np.log(b) / self.dT
+        slope, intercept = self.linear_regression(X=X, Y=Y)
+        self.theta = intercept / (1 - slope)
+        self.kappa = -np.log(slope) / self.dT
         self.xi = self.calculate_xi()
 
     def calculate_volatility(self) -> None:
         Z = np.random.normal(size=self.num_simulations)
-        self.v_t = (
+        self.v_t = np.maximum(
             self.v_t
             + self.kappa * (self.theta - self.v_t) * self.dT
-            + self.xi * np.sqrt(self.v_t * self.dT) * Z
+            + self.xi * np.sqrt(self.v_t * self.dT) * Z,
+            0
         )
 
     def linear_regression(
@@ -77,12 +78,20 @@ class MonteCarlo:
         cov_matrix = np.cov(X, Y, ddof=1)
         var_x = cov_matrix[0, 0]
         cov_xy = cov_matrix[0, 1]
-        a = cov_xy / var_x
-        b = mean_Y - a * mean_X
-        return float(a), float(b)
+        slope = cov_xy / var_x
+        intercept = mean_Y - slope * mean_X
+        return float(slope), float(intercept)
 
     def plot_monte_carlo(self):
-        ...
+        months = np.arange(self.N + 1) * self.dT * 12
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.plot(months, self.simulated_prices.T, linewidth=0.8, alpha=0.6)
+
+        ax.set_xlabel("Months")
+        ax.set_ylabel("Simulated Price")
+        ax.set_title("Monte Carlo Heston Model Simulation")
+        st.pyplot(fig)
 
 
 def is_valid_ticker(ticker):
@@ -135,6 +144,7 @@ def main() -> None:
                 "Please input the number of paths you want:", min_value=1
             )
             simulation.heston_model(num_simulations=num_simulations)
+            simulation.plot_monte_carlo()
         else:
             st.error("Please input a valid ticker value")
 
