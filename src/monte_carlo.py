@@ -57,6 +57,7 @@ class MonteCarlo:
         X = self.squared_log_returns[:-1]
         Y = self.squared_log_returns[1:]
         slope, intercept = self.linear_regression(X=X, Y=Y)
+        slope = min(max(slope, 0), 0.999)
         self.theta = intercept / (1 - slope)
         self.kappa = -np.log(slope) / self.dT
         self.xi = self.calculate_xi()
