@@ -35,14 +35,15 @@ class MonteCarlo:
         self.v_t = np.full(
             shape=(num_simulations,), fill_value=np.var(self.log_returns[-30:], ddof=1)
         )
-        self.simulated_prices = np.full(shape=(num_simulations, 1), fill_value=self.S0)
+        self.simulated_prices = np.zeros((self.num_simulations, self.N + 1))
+        self.simulated_prices[:, 0] = self.S0
         for step in range(self.N):
             Z = np.random.normal(size=self.simulated_prices[:, step].shape)
             step_prices = self.simulated_prices[:, step] * np.exp(
                 self.drift * self.dT + np.sqrt(self.v_t) * np.sqrt(self.dT) * Z
             )
             step_prices = step_prices.reshape(-1, 1)
-            self.simulated_prices = np.hstack((self.simulated_prices, step_prices))
+            self.simulated_prices[:, step + 1] = step_prices[:, 0]
             self.calculate_volatility()
 
     def calculate_xi(self) -> float:
