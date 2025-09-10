@@ -27,7 +27,7 @@ class MonteCarlo:
         self.S0 = S0
         self.log_returns = log_returns
         self.squared_log_returns = np.square(log_returns)
-        self.drift = (np.mean(log_returns) - np.var(log_returns, ddof=1) / 2)
+        self.drift = np.mean(log_returns) - np.var(log_returns, ddof=1) / 2
         self.heston_model_init()
 
     def heston_model(self, num_simulations: int) -> None:
@@ -69,7 +69,7 @@ class MonteCarlo:
             self.v_t
             + self.kappa * (self.theta - self.v_t) * self.dT
             + self.xi * np.sqrt(self.v_t * self.dT) * Z,
-            0
+            0,
         )
 
     def linear_regression(
@@ -97,8 +97,11 @@ class MonteCarlo:
 
 
 def is_valid_ticker(ticker):
-    data = yf.Ticker(ticker).history(period="1d")
-    return not data.empty
+    try:
+        data = yf.Ticker(ticker).history(period="1d")
+        return not data.empty
+    except Exception:
+        return False
 
 
 def main() -> None:
