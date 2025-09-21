@@ -38,7 +38,7 @@ class MonteCarlo:
         self.simulated_prices = np.zeros((self.num_simulations, self.N + 1))
         self.simulated_prices[:, 0] = self.S0
         for step in range(self.N):
-            Z = np.random.normal(size=self.simulated_prices[:, step].shape)
+            Z = np.random.normal(size=self.simulated_prices)
             step_prices = self.simulated_prices[:, step] * np.exp(
                 self.drift * self.dT + np.sqrt(self.v_t) * np.sqrt(self.dT) * Z
             )
